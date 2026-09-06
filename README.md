@@ -7,9 +7,12 @@ The project is intentionally aligned with [`cafebazaar-crawler`](https://github.
 ## What it does
 
 - Crawls both Myket **apps** and **games**
-- Walks category and "all apps" listing pages
+- Discovers category pages from stable `/apps/<category>` and `/games/<category>` URL patterns
+- Discovers collection pages from `/list/...` URLs and app details from `/app/<package>` URLs
+- Avoids relying on presentation-only CSS classes for listing discovery
 - Collects unique app detail URLs
 - Extracts app, developer, install, rating, category, description, price, version, and update metadata
+- Validates core detail metadata before writing a row
 - Stores one row per `package_name + source` in SQLite
 - Updates existing rows instead of creating duplicates
 - Runs headless by default
@@ -128,19 +131,26 @@ Defaults are intentionally conservative. Increase delays if Myket responds slowl
 
 ## Tests
 
-Run local unit tests:
+Run deterministic local unit tests:
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-GitHub Actions runs the same test suite on pushes and pull requests.
+Run the small live end-to-end smoke crawl:
 
-The unit tests intentionally avoid live Myket traffic. They cover deterministic parsing and database behavior; a real crawl is the end-to-end smoke test.
+```bash
+python tests/live_smoke.py
+```
+
+The live smoke validates a known public Myket app, then discovers and persists additional apps through the normal category flow. It is deliberately bounded to three saved apps.
+
+GitHub Actions runs unit tests on Python 3.9–3.12. A live smoke job runs on pull requests, can be started manually, and runs weekly to detect upstream Myket changes before they silently break data collection.
 
 ## Operational notes
 
-- The crawler depends on Myket's public web pages and CSS/DOM structure, which can change over time.
+- Listing discovery relies on Myket's public URL contracts (`/apps/`, `/games/`, `/list/`, `/app/`) rather than historical CSS class names.
+- Detail extraction still depends on semantic labels and parts of Myket's detail-page DOM, so the scheduled live smoke acts as an upstream contract check.
 - Selenium Manager resolves a compatible driver automatically when supported by the local Selenium/Chrome setup.
 - Individual page failures are logged and the crawl continues where possible.
 - `Ctrl+C` stops the crawl without removing rows already saved to SQLite.
