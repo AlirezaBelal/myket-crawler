@@ -2,15 +2,48 @@ import time
 import traceback
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Optional, Set
+from typing import Callable, Iterable, List, Optional, Set
+from urllib.parse import urlparse
 
 from selenium import webdriver
-from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 
 import config
 from html_parser import create_app_details_from_html
+
+
+MYKET_HOSTS = {"myket.ir", "www.myket.ir"}
+
+
+def _path(url: str) -> str:
+    try:
+        return urlparse(url).path.rstrip("/") or "/"
+    except (TypeError, ValueError):
+        return ""
+
+
+def is_myket_url(url: str) -> bool:
+    try:
+        return urlparse(url).netloc.lower() in MYKET_HOSTS
+    except (TypeError, ValueError):
+        return False
+
+
+def is_app_url(url: str) -> bool:
+    path = _path(url)
+    return is_myket_url(url) and path.startswith("/app/") and len(path) > len("/app/")
+
+
+def is_collection_url(url: str) -> bool:
+    path = _path(url)
+    return is_myket_url(url) and path.startswith("/list/") and len(path) > len("/list/")
+
+
+def is_category_url(url: str, section: str) -> bool:
+    path = _path(url)
+    prefix = f"/{section}/"
+    return is_myket_url(url) and path.startswith(prefix) and len(path) > len(prefix)
 
 
 @dataclass
@@ -86,21 +119,49 @@ class MyketCrawler:
     def _reached_limit(self) -> bool:
         return self.max_apps is not None and self.stats.saved >= self.max_apps
 
-    def _extract_app_links(self) -> List[str]:
+    def _extract_links(self, predicate: Callable[[str], bool]) -> List[str]:
         self._scroll_to_bottom()
-        links = []
-        for element in self.driver.find_elements(By.CLASS_NAME, "app-detail-link"):
-            href = element.get_attribute("href")
-            if href and href.startswith("http"):
-                links.append(href)
+        links: List[str] = []
+        for element in self.driver.find_elements(By.CSS_SELECTOR, "a[href]"):
+            href = (element.get_attribute("href") or "").strip()
+            if href and predicate(href):
+                links.append(href.split("#", 1)[0])
         return list(dict.fromkeys(links))
+
+    def _extract_app_links(self) -> List[str]:
+        return self._extract_links(is_app_url)
+
+    def _extract_collection_links(self) -> List[str]:
+        return self._extract_links(is_collection_url)
+
+    def _extract_category_links(self, section: str) -> List[str]:
+        return self._extract_links(lambda url: is_category_url(url, section))
+
+    @staticmethod
+    def _validate_app(app) -> None:
+        if not app.package_name:
+            raise ValueError("Myket detail page did not expose a package name")
+        if not app.name:
+            raise ValueError(f"Myket detail page for {app.package_name} did not expose a name")
+        if not any(
+            [
+                app.version,
+                app.category,
+                app.installation_count,
+                app.comment_count,
+                app.last_update,
+            ]
+        ):
+            raise ValueError(
+                f"Myket detail metadata was empty for {app.package_name}; DOM may have changed"
+            )
 
     def _crawl_links(self, links: Iterable[str]) -> None:
         for url in links:
             if self._reached_limit():
                 return
 
-            package_name = url.rstrip("/").split("/")[-1].split("?")[0]
+            package_name = _path(url).split("/")[-1]
             if not package_name or package_name in self.seen_packages:
                 self.stats.skipped_duplicates += 1
                 continue
@@ -111,6 +172,7 @@ class MyketCrawler:
             try:
                 self._open(url)
                 app = create_app_details_from_html(self.driver, self.driver.current_url)
+                self._validate_app(app)
                 app.save_to_db(str(self.db_path))
                 self.stats.saved += 1
                 print(f"[saved] {app.package_name} — {app.name}")
@@ -121,60 +183,45 @@ class MyketCrawler:
             finally:
                 self._sleep_ms(config.APP_DELAY_MS)
 
+    def crawl_app_url(self, url: str) -> CrawlStats:
+        if not is_app_url(url):
+            raise ValueError(f"Not a Myket app URL: {url}")
+        self._crawl_links([url])
+        return self.stats
+
     def _crawl_category_page(self, category_url: str) -> None:
         self._open(category_url)
-        buttons = self.driver.find_elements(By.CLASS_NAME, "btn-all-apps")
+        app_links = self._extract_app_links()
+        collection_links = self._extract_collection_links()
 
-        if not buttons:
-            self._crawl_links(self._extract_app_links())
+        self._crawl_links(app_links)
+        if self._reached_limit():
             return
 
-        button_count = self._limited_count(len(buttons), self.subcategory_limit)
-        for index in range(button_count):
+        collection_count = self._limited_count(
+            len(collection_links), self.subcategory_limit
+        )
+        for collection_url in collection_links[:collection_count]:
             if self._reached_limit():
                 return
-
-            self._open(category_url)
-            buttons = self.driver.find_elements(By.CLASS_NAME, "btn-all-apps")
-            if index >= len(buttons):
-                continue
-
-            try:
-                self.driver.execute_script("arguments[0].click();", buttons[index])
-                self._sleep_ms(config.PAGE_DELAY_MS)
-                self._crawl_links(self._extract_app_links())
-            except WebDriverException as exc:
-                self.stats.failed += 1
-                print(f"[failed] subcategory index {index}: {exc}")
+            self._open(collection_url)
+            self._crawl_links(self._extract_app_links())
 
     def crawl_section(self, section: str) -> None:
         base_url = self.BASE_URLS[section]
         print(f"== Crawling Myket {section} ==")
         self._open(base_url)
-        categories = self.driver.find_elements(By.CLASS_NAME, "category-item")
+        categories = self._extract_category_links(section)
 
         if not categories:
             self._crawl_category_page(base_url)
             return
 
         category_count = self._limited_count(len(categories), self.category_limit)
-        for index in range(category_count):
+        for category_url in categories[:category_count]:
             if self._reached_limit():
                 return
-
-            self._open(base_url)
-            categories = self.driver.find_elements(By.CLASS_NAME, "category-item")
-            if index >= len(categories):
-                continue
-
-            try:
-                self.driver.execute_script("arguments[0].click();", categories[index])
-                self._sleep_ms(config.PAGE_DELAY_MS)
-                category_url = self.driver.current_url
-                self._crawl_category_page(category_url)
-            except WebDriverException as exc:
-                self.stats.failed += 1
-                print(f"[failed] category index {index}: {exc}")
+            self._crawl_category_page(category_url)
 
     def crawl(self, sections: Iterable[str]) -> CrawlStats:
         for section in sections:
