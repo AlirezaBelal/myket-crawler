@@ -3,8 +3,10 @@ __pycache__/
 *.py[cod]
 *.pyo
 
-# Tests / temp
+# Tests / coverage
 .pytest_cache/
+.coverage
+htmlcov/
 _trial_temp/
 
 # Virtual environments
@@ -12,13 +14,24 @@ _trial_temp/
 venv/
 env/
 
-# Secrets
+# Local data
+data/*
+!data/.gitkeep
+*.db
+*.sqlite
+*.sqlite3
+
+# Secrets / local config
 .env
 .env.*
 !.env.example
 
 # Logs
 *.log
+
+# Editors
+.idea/
+.vscode/
 
 # OS files
 .DS_Store
