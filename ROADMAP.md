@@ -16,7 +16,7 @@ The product is the **dataset and collection workflow**, not Selenium itself.
 - [x] CLI controls for smoke tests and bounded runs
 - [x] Unit tests for deterministic parsing and persistence
 - [x] CI for every push and pull request
-- [ ] Add a live smoke-test checklist against a small Myket category
+- [x] Add a bounded Myket live smoke on a weekly schedule or explicit manual dispatch (not on PRs); offline regression tests cover redirects and package identity
 - [ ] Harden selectors when Myket changes its DOM
 - [ ] Add structured logging and explicit retry/backoff behavior
 
