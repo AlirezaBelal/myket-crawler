@@ -1,180 +1,108 @@
-# myket-crawler
+# Myket Crawler
 
-A Python crawler for collecting public Myket app metadata into a local SQLite database. Live extraction depends on Myket's evolving pages and requires periodic validation.
+**A lightweight, local-first tool for exploring public Myket Android app metadata.**
 
-The project is intentionally aligned with [`cafebazaar-crawler`](https://github.com/AlirezaBelal/cafebazaar-crawler), including a compatible `app_details` schema. That makes the two crawlers useful as a pair for Iranian Android market research and cross-store analysis.
+Collect permitted public listings with Selenium, save them to SQLite, inspect them in a modern **standalone Persian RTL dashboard**, or export CSV for analysis. This is an independent research tool, not an official Myket product.
 
-## What it does
+The app is designed to complement [CafeBazaar Crawler](https://github.com/AlirezaBelal/cafebazaar-crawler); both use the same `app_details` SQLite schema.
 
-- Crawls both Myket **apps** and **games**
-- Discovers category pages from stable `/apps/<category>` and `/games/<category>` URL patterns
-- Discovers collection pages from `/list/...` URLs and app details from `/app/<package>` URLs
-- Avoids relying on presentation-only CSS classes for listing discovery
-- Collects unique app detail URLs
-- Extracts app, developer, install, rating, category, description, price, version, and update metadata
-- Validates core detail metadata and requires the expected package identity after navigation before writing a row
-- Stores one row per `package_name + source` in SQLite
-- Updates existing rows instead of creating duplicates
-- Runs headless by default
-- Uses Selenium Manager, so no hardcoded ChromeDriver path is required
-- Supports small controlled smoke tests with CLI limits
-- Preserves data already written when interrupted
-- Prints a crawl summary when finished
+## Start with an offline demo — no installation beyond Python
 
-## Requirements
+Requires **Python 3.9+**.
 
-- Python 3.9+
-- Google Chrome / Chromium
-- `selenium`
-- `jdatetime`
-- SQLite (included with Python)
+**Windows:** Double-click `scripts/desktop-demo.cmd` to generate fictional records and open your report in a browser.
 
-## Quick start
+**Windows, macOS, Linux:**
 
 ```bash
-git clone https://github.com/AlirezaBelal/myket-crawler.git
-cd myket-crawler
+python src/main.py --demo
+```
+
+Open `data/demo-report.html`. This produces **12 clearly fictional sample apps** and does not launch Selenium, open Myket or make any network request. If `data/demo.db` exists, choose a different path with `--db data/demo-2.db`. Existing databases are never overwritten by the demo.
+
+The Persian-first dashboard supports search, category filters, sorting by installs or rating, responsive mobile cards, accessible controls and light/dark mode. CSS and JavaScript are embedded into one local HTML file; no hosting, analytics, fonts, servers or CDNs are required.
+
+## Work with an existing SQLite dataset (offline)
+
+```bash
+python src/main.py --report data/myket-report.html
+python src/main.py --export-csv data/myket-apps.csv
+
+# Your own database:
+python src/main.py --db data/my-run.db --report data/my-run-report.html
+```
+
+The report displays up to 500 rows by default (`--report-limit` may be 1–1000). CSV exports selected metadata for all rows, using UTF-8 with a BOM and protection against spreadsheet formula injection. **Developer phone and email are never included in the dashboard or CSV.** Do not distribute raw databases without assessing personal-data obligations.
+
+## Run a small, permitted live crawl
+
+Only crawl public data that you are authorized to access. Respect Myket's terms, robots/access rules, login barriers and sensible request rates. Do not bypass restrictions.
+
+**Live requirements:** Python 3.9+, Chrome/Chromium, Selenium and jdatetime. Selenium Manager finds ChromeDriver on most supported systems.
+
+```bash
 python -m venv .venv
+# Windows PowerShell: .\.venv\Scripts\Activate.ps1
+# macOS / Linux: source .venv/bin/activate
+python -m pip install -r requirements.txt
+
+python src/main.py --section apps --category-limit 1 --subcategory-limit 1 --max-apps 3
 ```
 
-Windows PowerShell:
+Your local database defaults to `data/myket_results.db`. The app scans Myket's public app and game listings, collects unique packages and saves metadata to SQLite. Captured fields include install counts, category, version, rating, update date, descriptions, and optional developer contacts **in the local raw database only**.
 
-```powershell
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-python src/main.py --max-apps 20
-```
+An unqualified `python src/main.py` intentionally does **not** crawl anything. Full, potentially unbounded collection requires `python src/main.py --full` and should not be used as your first test. Even a `--max-apps` run is not a global request budget: discovery and retries can generate additional requests.
 
-macOS / Linux:
+Use `--headful` to see Chrome or `--db data/custom.db` to select your output file. Numeric crawl limits must be strictly positive when present.
+
+### Opt-in live smoke
 
 ```bash
-source .venv/bin/activate
-pip install -r requirements.txt
-python src/main.py --max-apps 20
+python tests/live_smoke.py --yes-live
 ```
 
-`--max-apps 20` is the recommended first run. Remove the option for a larger crawl. Limit options (`--max-apps`, `--category-limit`, and `--subcategory-limit`) must be positive integers when supplied.
+The live test uses a temporary SQLite database and attempts a bounded public-app crawl; it needs network access and Chrome. It is never run for PRs. Existing CI schedules a weekly live contract check or it can be dispatched explicitly; those runs should be monitored because Myket's pages can change. A successful live check is only evidence for the tested flow, not proof of unlimited crawling reliability.
 
-## Usage
-
-Crawl apps and games:
+## Tests and project layout
 
 ```bash
-python src/main.py
-```
-
-Crawl only apps:
-
-```bash
-python src/main.py --section apps
-```
-
-Small controlled run:
-
-```bash
-python src/main.py \
-  --section apps \
-  --category-limit 1 \
-  --subcategory-limit 1 \
-  --max-apps 20
-```
-
-Write to a custom database:
-
-```bash
-python src/main.py --max-apps 20 --db data/test.db
-```
-
-Show Chrome while crawling:
-
-```bash
-python src/main.py --max-apps 20 --headful
-```
-
-Show all CLI options:
-
-```bash
-python src/main.py --help
-```
-
-## Output
-
-By default, data is stored at:
-
-```text
-data/myket_results.db
-```
-
-The `app_details` table uses `(package_name, source)` as its primary key. Re-crawling an app refreshes its row instead of duplicating it.
-
-The schema is designed to stay compatible with `cafebazaar-crawler`, so downstream analysis can combine both stores with minimal transformation.
-
-## Database fields
-
-The table includes:
-
-`name`, `package_name`, developer contact fields, `homepage_url`, install count, average score, review counts, star distribution, category/subcategory, update timestamp, tags, price, source, descriptions, and version.
-
-## Configuration
-
-Environment variables:
-
-| Variable | Default | Purpose |
-| --- | ---: | --- |
-| `MYKET_PAGE_DELAY_MS` | `1200` | Delay after page navigation |
-| `MYKET_APP_DELAY_MS` | `250` | Delay between app detail pages |
-| `MYKET_PAGE_LOAD_TIMEOUT` | `30` | Selenium page-load timeout in seconds |
-| `MYKET_DATA_DIR` | `./data` | Default data directory |
-| `MYKET_DB_PATH` | `./data/myket_results.db` | Exact SQLite output path |
-
-Defaults are intentionally conservative. Increase delays if Myket responds slowly or if you are running larger crawls.
-
-## Tests
-
-Run deterministic local unit tests:
-
-```bash
+python -m compileall -q src tests
 python -m unittest discover -s tests -v
 ```
 
-Run the small live end-to-end smoke crawl:
+Offline deterministic tests run in GitHub Actions across supported Python versions, plus browser visual QA for responsive report changes. To run the visual smoke locally, first install Playwright and its browser:
 
 ```bash
-python tests/live_smoke.py
+python -m pip install playwright
+python -m playwright install chromium
+python tests/visual_qa.py
 ```
 
-The live smoke validates a known public Myket app, then discovers and persists additional apps through the normal category flow. It is deliberately bounded to three saved apps.
+The visual test checks mobile and desktop layout, local-only loading, search, category filtering, sorting and dark mode. Screenshots are saved to ignored local artifacts.
 
-GitHub Actions runs offline unit tests on Python 3.9–3.12 for pull requests and pushes to `master`. The bounded live smoke can be started manually (`workflow_dispatch`) and runs weekly to detect upstream changes; **opening or updating a pull request does not launch a live Myket crawl**. The live smoke contacts a third-party website, so run it manually only when appropriate.
+```text
+src/main.py                Safe offline-first command-line interface
+src/crawler.py             Selenium network adapter
+src/html_parser.py         Myket HTML metadata parser
+src/models/AppDetails.py   Compatible local SQLite persistence
+src/local_report.py        Offline demo, HTML report and CSV
+src/report_template.html   Semantic RTL report template
+src/report_style.css       Responsive light/dark visual system
+src/report_interactions.js Local interactive filters and theme
+scripts/desktop-demo.cmd   Double-click offline Windows demo
+tests/                     Offline tests, visual QA and opt-in live smoke
+data/                      Ignored local databases and reports
+```
 
-## Operational notes
+Environment variables include `MYKET_PAGE_DELAY_MS` (default 1200), `MYKET_APP_DELAY_MS` (250), `MYKET_PAGE_LOAD_TIMEOUT` (30 seconds), `MYKET_DATA_DIR` and `MYKET_DB_PATH`. Keep request intervals conservative and increase them if necessary.
 
-- Listing discovery relies on Myket's public URL contracts (`/apps/`, `/games/`, `/list/`, `/app/`) rather than historical CSS class names.
-- Detail extraction still depends on semantic labels and parts of Myket's detail-page DOM, so the scheduled live smoke acts as an upstream contract check.
-- Selenium Manager resolves a compatible driver automatically when supported by the local Selenium/Chrome setup.
-- The crawler only accepts HTTPS links on `myket.ir`/`www.myket.ir`; off-domain redirects and unexpected package changes are rejected before writing SQLite data.
-- Individual page failures are logged and the crawl continues where possible.
-- `Ctrl+C` stops the crawl without removing rows already saved to SQLite.
-- Database files, logs, virtual environments, and local environment files are excluded from Git.
+## Status, privacy and licensing
 
-## Product direction
+- Offline demo and reports do not require an Internet connection.
+- Live extraction is best-effort and sensitive to Myket's markup, access conditions and service availability.
+- All user datasets, databases, HTML reports, logs and virtual environments must remain outside version control.
+- No login credentials, personal datasets or API bypass methods are included.
+- Do not misrepresent fictional sample records as live Myket data.
+- [Roadmap](ROADMAP.md): history, incremental collection and cross-store analysis are potential later phases, not shipped functionality.
 
-This repository is most valuable as one collector in a broader **Iranian app-market intelligence pipeline**. Paired with `cafebazaar-crawler`, the shared schema can support:
-
-- cross-store app availability and metadata comparison
-- install/rating/category benchmarking
-- developer portfolio discovery
-- update-frequency monitoring
-- historical snapshots and trend analysis
-
-See [ROADMAP.md](ROADMAP.md) for the next product-oriented milestones.
-
-## Responsible use
-
-Use this project in accordance with Myket's terms, applicable laws, robots/access policies, and reasonable request rates. Crawl only public information you are permitted to collect.
-
-This project is not affiliated with or endorsed by Myket.
-
-## License
-
-MIT — see [LICENSE](LICENSE).
+Licensed under [MIT](LICENSE).
