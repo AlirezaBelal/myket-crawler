@@ -1,0 +1,40 @@
+name: Offline browser visual QA
+
+on:
+  pull_request:
+    paths:
+      - "src/local_report.py"
+      - "src/report_template.html"
+      - "src/report_style.css"
+      - "src/report_interactions.js"
+      - "tests/visual_qa.py"
+      - ".github/workflows/visual-qa.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  chromium-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the browser automation dependency
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "playwright>=1.50,<2"
+          python -m playwright install --with-deps chromium
+      - name: Render demo and verify four viewports, filters and theme
+        run: python tests/visual_qa.py
+      - name: Upload responsive screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: myket-offline-design-previews
+          path: artifacts/visual-qa/
+          if-no-files-found: warn
+          retention-days: 7

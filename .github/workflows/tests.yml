@@ -13,10 +13,18 @@ permissions:
 
 jobs:
   unit-tests:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        include:
+          - os: ubuntu-latest
+            python-version: "3.9"
+          - os: windows-latest
+            python-version: "3.12"
+          - os: ubuntu-latest
+            python-version: "3.14"
 
     steps:
       - uses: actions/checkout@v4
@@ -27,7 +35,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      - name: Run tests
+      - name: Compile source and tests
+        run: python -m compileall -q src tests
+      - name: Run offline tests
         run: python -m unittest discover -s tests -v
 
   live-smoke:
@@ -51,4 +61,4 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Run live Myket smoke crawl
-        run: python tests/live_smoke.py
+        run: python tests/live_smoke.py --yes-live

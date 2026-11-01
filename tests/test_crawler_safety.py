@@ -81,11 +81,11 @@ class CliBoundednessTests(unittest.TestCase):
             for value in ("0", "-3"):
                 with self.subTest(option=option, value=value):
                     with patch.object(sys, "argv", ["myket", option, value]):
-                        with patch.object(cli, "MyketCrawler") as browser:
+                        with patch.object(cli, "run_crawler") as browser:
                             with self.assertRaises(SystemExit) as err:
                                 cli.main()
                         browser.assert_not_called()
-                        self.assertIn(option, str(err.exception))
+                        self.assertEqual(err.exception.code, 2)
 
 
 if __name__ == "__main__":

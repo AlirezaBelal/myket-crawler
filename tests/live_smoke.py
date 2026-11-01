@@ -1,4 +1,6 @@
+import argparse
 import sqlite3
+from contextlib import closing
 import sys
 import tempfile
 from pathlib import Path
@@ -13,7 +15,7 @@ KNOWN_APP_URL = "https://myket.ir/app/ir.filmnet.android"
 
 
 def read_rows(db_path: Path):
-    with sqlite3.connect(db_path) as connection:
+    with closing(sqlite3.connect(db_path)) as connection:
         return connection.execute(
             "SELECT package_name, name, installation_count, category, source "
             "FROM app_details ORDER BY package_name"
@@ -21,6 +23,12 @@ def read_rows(db_path: Path):
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Opt-in small Myket live smoke test")
+    parser.add_argument("--yes-live", action="store_true",
+                        help="I authorize limited public Myket network requests.")
+    args = parser.parse_args()
+    if not args.yes_live:
+        parser.error("To run live requests, pass --yes-live explicitly")
     with tempfile.TemporaryDirectory() as temp_dir:
         db_path = Path(temp_dir) / "live-smoke.db"
         crawler = MyketCrawler(
