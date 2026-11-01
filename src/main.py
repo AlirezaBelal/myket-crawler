@@ -49,8 +49,13 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
-    if args.max_apps is not None and args.max_apps <= 0:
-        raise SystemExit("--max-apps must be greater than zero")
+    for option, value in (
+        ("--max-apps", args.max_apps),
+        ("--category-limit", args.category_limit),
+        ("--subcategory-limit", args.subcategory_limit),
+    ):
+        if value is not None and value <= 0:
+            raise SystemExit(f"{option} must be greater than zero")
 
     config.ensure_data_dir()
     sections = ("apps", "games") if args.section == "all" else (args.section,)
