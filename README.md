@@ -1,6 +1,6 @@
 # myket-crawler
 
-A product-ready Python crawler that collects public app metadata from Myket and stores the results in a local SQLite database.
+A Python crawler for collecting public Myket app metadata into a local SQLite database. Live extraction depends on Myket's evolving pages and requires periodic validation.
 
 The project is intentionally aligned with [`cafebazaar-crawler`](https://github.com/AlirezaBelal/cafebazaar-crawler), including a compatible `app_details` schema. That makes the two crawlers useful as a pair for Iranian Android market research and cross-store analysis.
 
@@ -12,7 +12,7 @@ The project is intentionally aligned with [`cafebazaar-crawler`](https://github.
 - Avoids relying on presentation-only CSS classes for listing discovery
 - Collects unique app detail URLs
 - Extracts app, developer, install, rating, category, description, price, version, and update metadata
-- Validates core detail metadata before writing a row
+- Validates core detail metadata and requires the expected package identity after navigation before writing a row
 - Stores one row per `package_name + source` in SQLite
 - Updates existing rows instead of creating duplicates
 - Runs headless by default
@@ -53,7 +53,7 @@ pip install -r requirements.txt
 python src/main.py --max-apps 20
 ```
 
-`--max-apps 20` is the recommended first run. Remove the option for a larger crawl.
+`--max-apps 20` is the recommended first run. Remove the option for a larger crawl. Limit options (`--max-apps`, `--category-limit`, and `--subcategory-limit`) must be positive integers when supplied.
 
 ## Usage
 
@@ -145,13 +145,14 @@ python tests/live_smoke.py
 
 The live smoke validates a known public Myket app, then discovers and persists additional apps through the normal category flow. It is deliberately bounded to three saved apps.
 
-GitHub Actions runs unit tests on Python 3.9–3.12. A live smoke job runs on pull requests, can be started manually, and runs weekly to detect upstream Myket changes before they silently break data collection.
+GitHub Actions runs offline unit tests on Python 3.9–3.12 for pull requests and pushes to `master`. The bounded live smoke can be started manually (`workflow_dispatch`) and runs weekly to detect upstream changes; **opening or updating a pull request does not launch a live Myket crawl**. The live smoke contacts a third-party website, so run it manually only when appropriate.
 
 ## Operational notes
 
 - Listing discovery relies on Myket's public URL contracts (`/apps/`, `/games/`, `/list/`, `/app/`) rather than historical CSS class names.
 - Detail extraction still depends on semantic labels and parts of Myket's detail-page DOM, so the scheduled live smoke acts as an upstream contract check.
 - Selenium Manager resolves a compatible driver automatically when supported by the local Selenium/Chrome setup.
+- The crawler only accepts HTTPS links on `myket.ir`/`www.myket.ir`; off-domain redirects and unexpected package changes are rejected before writing SQLite data.
 - Individual page failures are logged and the crawl continues where possible.
 - `Ctrl+C` stops the crawl without removing rows already saved to SQLite.
 - Database files, logs, virtual environments, and local environment files are excluded from Git.

@@ -25,7 +25,8 @@ def _path(url: str) -> str:
 
 def is_myket_url(url: str) -> bool:
     try:
-        return urlparse(url).netloc.lower() in MYKET_HOSTS
+        parsed = urlparse(url)
+        return parsed.scheme == "https" and parsed.netloc.lower() in MYKET_HOSTS
     except (TypeError, ValueError):
         return False
 
@@ -171,8 +172,18 @@ class MyketCrawler:
 
             try:
                 self._open(url)
-                app = create_app_details_from_html(self.driver, self.driver.current_url)
+                # Redirects and unexpected page contents must not be recorded as
+                # the package originally discovered on the trusted Myket page.
+                final_url = self.driver.current_url
+                if not is_app_url(final_url):
+                    raise ValueError("App navigation left an allowed Myket app URL")
+                final_package = _path(final_url).split("/")[-1]
+                if final_package != package_name:
+                    raise ValueError("App navigation redirected to a different package")
+                app = create_app_details_from_html(self.driver, final_url)
                 self._validate_app(app)
+                if app.package_name != package_name:
+                    raise ValueError("Parsed package does not match the requested app")
                 app.save_to_db(str(self.db_path))
                 self.stats.saved += 1
                 print(f"[saved] {app.package_name} — {app.name}")
