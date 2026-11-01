@@ -36,3 +36,8 @@ data/*
 # OS files
 .DS_Store
 Thumbs.db
+
+# Generated offline reports, exports and visual QA artifacts
+*-report.html
+*.csv
+artifacts/
