@@ -20,6 +20,16 @@ The product is the **dataset and collection workflow**, not Selenium itself.
 - [ ] Harden selectors when Myket changes its DOM
 - [ ] Add structured logging and explicit retry/backoff behavior
 
+## Phase 1.5 — Offline research product
+
+- [x] Safe default CLI: never start unlimited crawling accidentally
+- [x] Twelve-record synthetic demo that never touches the real dataset
+- [x] Standalone Persian RTL dashboard with filters, sorting, category charts and theme
+- [x] Local privacy-focused CSV export with spreadsheet-formula protection
+- [x] One-click Windows demo launcher
+- [x] Responsive browser UI smoke and offline tests
+- [ ] Independent recent live verification on an authorized environment after this product update
+
 ## Phase 2 — Historical data
 
 - [ ] Store crawl timestamp / snapshot date
