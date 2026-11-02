@@ -5,9 +5,13 @@ for the explicit synthetic demo builder, and the report omits developer contacts
 """
 import csv
 import html
+import math
+import os
+import re
 import sqlite3
+import tempfile
 from collections import Counter
-from contextlib import closing
+from contextlib import closing, contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List
@@ -38,7 +42,7 @@ def create_demo(db_path: Path) -> int:
         ("ir.example.demo.puzzle", "پازلستان", "سرگرمی", 291000, 4.1, "5.1"),
         ("ir.example.demo.travel", "سفرنامه", "سفر", 38200, 4.6, "1.8"),
     )
-    if Path(db_path).exists():
+    if Path(db_path).exists() or Path(db_path).is_symlink():
         raise FileExistsError("Demo destination already exists; choose a new --db path")
     for package, name, category, installs, score, version in examples:
         AppDetails(
@@ -70,6 +74,42 @@ def _read_rows(db_path: Path, limit: int = 0) -> List[Dict]:
     return [dict(row) for row in rows]
 
 
+def _safe_int(value) -> int:
+    try:
+        return max(0, int(value or 0))
+    except (TypeError, ValueError, OverflowError):
+        return 0
+
+
+def _safe_rating(value) -> float:
+    try:
+        rating = float(value or 0)
+        return rating if math.isfinite(rating) and 0 <= rating <= 5 else 0.0
+    except (TypeError, ValueError, OverflowError):
+        return 0.0
+
+
+@contextmanager
+def _atomic_output(db_path: Path, output: Path, *, encoding: str, newline=None):
+    source = Path(db_path).expanduser().resolve()
+    target = Path(output).expanduser().resolve()
+    if target == source or (target.exists() and os.path.samefile(source, target)):
+        raise ValueError("Output path must not overwrite the input SQLite database")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding=encoding, newline=newline,
+            dir=str(target.parent), prefix=".myket-export-", delete=False
+        ) as handle:
+            temp_path = Path(handle.name)
+            yield handle
+        os.replace(str(temp_path), str(target))
+    finally:
+        if temp_path is not None and temp_path.exists():
+            temp_path.unlink()
+
+
 def _safe_csv(value) -> str:
     value = "" if value is None else str(value)
     # Protect spreadsheet consumers against formula execution in untrusted names.
@@ -80,9 +120,7 @@ def _safe_csv(value) -> str:
 
 def export_csv(db_path: Path, output: Path) -> int:
     rows = _read_rows(db_path)
-    output = Path(output)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    with output.open("w", encoding="utf-8-sig", newline="") as handle:
+    with _atomic_output(db_path, output, encoding="utf-8-sig", newline="") as handle:
         writer = csv.writer(handle)
         writer.writerow(COLUMNS)
         for row in rows:
@@ -91,7 +129,7 @@ def export_csv(db_path: Path, output: Path) -> int:
 
 
 def _format_int(value) -> str:
-    return format(int(value or 0), ",")
+    return format(_safe_int(value), ",")
 
 
 def _format_date(value) -> str:
@@ -113,8 +151,9 @@ def create_report(db_path: Path, output: Path, limit: int = 500) -> int:
     rows = rows[:limit]
     total = len(rows)
     categories = Counter(str(row.get("category") or "نامشخص") for row in rows)
-    installs = sum(int(row.get("installation_count") or 0) for row in rows)
-    ratings = [float(row["average_score"]) for row in rows if row.get("average_score")]
+    installs = sum(_safe_int(row.get("installation_count")) for row in rows)
+    ratings = [_safe_rating(row.get("average_score")) for row in rows]
+    ratings = [rating for rating in ratings if rating > 0]
     mean = sum(ratings) / len(ratings) if ratings else 0.0
 
     # The HTML remains a single self-contained, offline file. No external fonts,
@@ -133,8 +172,8 @@ def create_report(db_path: Path, output: Path, limit: int = 500) -> int:
         package = str(row.get("package_name") or "")
         category = str(row.get("category") or "نامشخص")
         version = str(row.get("version") or "—")
-        installs_value = int(row.get("installation_count") or 0)
-        rating_value = float(row.get("average_score") or 0)
+        installs_value = _safe_int(row.get("installation_count"))
+        rating_value = _safe_rating(row.get("average_score"))
         rating_text = "{:.1f}".format(rating_value) if rating_value else "—"
         search_text = " ".join((name, package, category, str(row.get("sub_category") or "")))
         table_rows.append(
@@ -206,10 +245,10 @@ def create_report(db_path: Path, output: Path, limit: int = 500) -> int:
         ("__REPORT_CATEGORY_OPTIONS__", "\n".join(category_options)),
         ("__REPORT_ROWS__", "\n".join(table_rows)),
     )
-    page = template
-    for token, content in replacements:
-        page = page.replace(token, content)
-    output = Path(output)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(page, encoding="utf-8")
+    # Replace only template tokens once. Values containing token-like strings
+    # must remain literal user data, not be re-interpreted as template syntax.
+    mapping = dict(replacements)
+    page = re.sub(r"__REPORT_[A-Z_]+__", lambda match: mapping[match.group(0)], template)
+    with _atomic_output(db_path, output, encoding="utf-8") as handle:
+        handle.write(page)
     return total

@@ -29,13 +29,18 @@ def main():
             browser = playwright.chromium.launch(headless=True)
             try:
                 for label, width, height in (
+                    ("desktop-1920", 1920, 1080),
                     ("desktop-1440", 1440, 900),
+                    ("tablet-1024", 1024, 768),
                     ("tablet-768", 768, 1024),
                     ("mobile-390", 390, 844),
+                    ("mobile-375", 375, 812),
                     ("mobile-320", 320, 740),
                 ):
                     page = browser.new_page(viewport={"width": width, "height": height}, device_scale_factor=1)
                     external = []
+                    errors = []
+                    page.on("pageerror", lambda error: errors.append(str(error)))
                     page.on("request", lambda request: external.append(request.url) if request.url.startswith(("http:", "https:")) else None)
                     page.goto(report.resolve().as_uri(), wait_until="load")
                     page.locator("#inventory").scroll_into_view_if_needed()
@@ -44,6 +49,9 @@ def main():
                     overflow = page.evaluate("document.documentElement.scrollWidth - window.innerWidth")
                     assert overflow <= 1, "horizontal overflow {}px on {}".format(overflow, label)
                     assert not external, "Report attempted external network access: {}".format(external)
+                    assert not errors, "Unexpected browser JavaScript errors: {}".format(errors)
+                    assert page.locator(".report-mode").is_visible(), "Demo label hidden on {}".format(label)
+                    assert "ساختگی" in page.locator(".report-mode").inner_text()
                     page.screenshot(path=str(ARTIFACTS / (label + ".png")), full_page=True)
                     if label == "desktop-1440":
                         page.locator("#search").fill("یادداشت")
@@ -65,7 +73,7 @@ def main():
                     page.close()
             finally:
                 browser.close()
-    print("Visual QA PASS: four viewports, no overflow/network, interactive filters/sort/dark mode")
+    print("Visual QA PASS: seven viewports, visible demo badge, no JS errors/network/overflow, interactive filters/sort/dark mode")
 
 
 if __name__ == "__main__":

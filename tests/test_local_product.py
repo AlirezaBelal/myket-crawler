@@ -98,6 +98,48 @@ class LocalProductTests(unittest.TestCase):
             finally:
                 os.chdir(previous)
 
+    def test_exports_never_overwrite_the_input_database(self):
+        with tempfile.TemporaryDirectory() as folder:
+            db = Path(folder) / "important.db"
+            AppDetails(name="Keep me", package_name="ir.safe", source=Source.MYKET).save_to_db(str(db))
+            original = db.read_bytes()
+            with self.assertRaisesRegex(ValueError, "must not overwrite"):
+                export_csv(db, db)
+            with self.assertRaisesRegex(ValueError, "must not overwrite"):
+                create_report(db, db)
+            self.assertEqual(db.read_bytes(), original)
+            with closing(sqlite3.connect(db)) as connection:
+                self.assertEqual(connection.execute("SELECT COUNT(*) FROM app_details").fetchone()[0], 1)
+
+    def test_corrupt_numeric_fields_cannot_break_local_report(self):
+        with tempfile.TemporaryDirectory() as folder:
+            db = Path(folder) / "malformed.db"
+            report = Path(folder) / "report.html"
+            AppDetails(name="Damaged", package_name="ir.bad",
+                       source=Source.MYKET).save_to_db(str(db))
+            with closing(sqlite3.connect(db)) as connection:
+                connection.execute(
+                    "UPDATE app_details SET installation_count=?, average_score=?",
+                    ("not-a-number", "NaN"),
+                )
+                connection.commit()
+            self.assertEqual(create_report(db, report), 1)
+            page = report.read_text(encoding="utf-8")
+            self.assertIn("Damaged", page)
+            self.assertNotIn("nan", page.lower())
+
+    def test_template_markers_inside_source_fields_are_not_expanded(self):
+        with tempfile.TemporaryDirectory() as folder:
+            db = Path(folder) / "records.db"
+            out = Path(folder) / "report.html"
+            AppDetails(name="Example __REPORT_COUNT__",
+                       package_name="ir.marker",
+                       source=Source.MYKET).save_to_db(str(db))
+            create_report(db, out)
+            markup = out.read_text(encoding="utf-8")
+            self.assertIn("Example __REPORT_COUNT__", markup)
+            self.assertIn("ir.marker", markup)
+
     def test_missing_db_rejected_without_creating_it(self):
         with tempfile.TemporaryDirectory() as folder:
             missing = Path(folder) / "missing.db"

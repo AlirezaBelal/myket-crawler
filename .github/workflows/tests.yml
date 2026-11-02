@@ -5,8 +5,6 @@ on:
     branches: [master]
   pull_request:
   workflow_dispatch:
-  schedule:
-    - cron: "17 3 * * 1"
 
 permissions:
   contents: read
@@ -42,8 +40,8 @@ jobs:
 
   live-smoke:
     # Avoid crawling a third-party website on untrusted PR submissions.
-    # Live checks remain available on the existing weekly schedule or by manual dispatch.
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    # Live requests require a deliberate manual workflow dispatch; never run weekly or on PRs.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
