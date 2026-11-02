@@ -58,6 +58,7 @@ class AuditTests(unittest.TestCase):
         with patch('crawler.MyketCrawler') as factory:
             fake = factory.return_value
             fake.stopped_due_to_failures = False
+            fake.budget_exhausted = False
             fake.crawl.return_value = SimpleNamespace(discovered=3, saved=2, failed=1, skipped_duplicates=0)
             with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
                 self.assertEqual(cli.run_crawler(args), 1)
