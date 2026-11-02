@@ -1,6 +1,9 @@
 """Offline security and CLI regression tests; no browser or Myket access."""
+import io
 import sys
 import tempfile
+from contextlib import redirect_stderr, redirect_stdout
+from types import SimpleNamespace
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -75,6 +78,58 @@ class SafeNavigationTests(unittest.TestCase):
             crawler.close()
 
 
+    def test_three_consecutive_detail_failures_stop_all_further_requests(self):
+        links = [f"https://myket.ir/app/ir.example.{i}" for i in range(6)]
+        driver = MagicMock()
+        driver.get.side_effect = lambda url: setattr(driver, "current_url", url)
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(MyketCrawler, "_build_driver", return_value=driver):
+                crawler = MyketCrawler(Path(tmp) / "apps.db", max_apps=1)
+            with patch.object(crawler, "_sleep_ms"):
+                with patch("crawler.create_app_details_from_html", side_effect=ValueError("Broken markup")) as parser:
+                    crawler._crawl_links(links)
+                    crawler._crawl_links(links[3:])
+            self.assertEqual(driver.get.call_count, 3)
+            self.assertEqual(parser.call_count, 3)
+            self.assertEqual(crawler.stats.failed, 3)
+            self.assertEqual(crawler.stats.discovered, 3)
+            self.assertTrue(crawler.stopped_due_to_failures)
+            self.assertFalse((Path(tmp) / "apps.db").exists())
+            crawler.close()
+
+    def test_success_resets_consecutive_failure_counter(self):
+        links = [f"https://myket.ir/app/ir.example.{i}" for i in range(7)]
+        driver = MagicMock()
+        driver.get.side_effect = lambda url: setattr(driver, "current_url", url)
+        saved_app = MagicMock()
+        saved_app.package_name = "ir.example.2"
+        saved_app.name = "Valid"
+        saved_app.version = "1"
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(MyketCrawler, "_build_driver", return_value=driver):
+                crawler = MyketCrawler(Path(tmp) / "apps.db")
+            with patch.object(crawler, "_sleep_ms"):
+                with patch("crawler.create_app_details_from_html", side_effect=[
+                    ValueError("bad 0"), ValueError("bad 1"), saved_app,
+                    ValueError("bad 3"), ValueError("bad 4"), ValueError("bad 5"),
+                ]):
+                    crawler._crawl_links(links)
+            self.assertEqual(driver.get.call_count, 6)
+            self.assertEqual(crawler.stats.saved, 1)
+            self.assertEqual(crawler.stats.failed, 5)
+            self.assertTrue(crawler.stopped_due_to_failures)
+            saved_app.save_to_db.assert_called_once()
+            crawler.close()
+
+    def test_driver_quits_when_timeout_configuration_fails(self):
+        driver = MagicMock()
+        driver.set_page_load_timeout.side_effect = RuntimeError("setup failed")
+        with patch("crawler.webdriver.Chrome", return_value=driver):
+            with self.assertRaisesRegex(RuntimeError, "setup failed"):
+                MyketCrawler._build_driver(headless=True)
+        driver.quit.assert_called_once()
+
+
 class CliBoundednessTests(unittest.TestCase):
     def test_nonpositive_limits_rejected_before_browser_launch(self):
         for option in ("--max-apps", "--category-limit", "--subcategory-limit"):
@@ -86,6 +141,23 @@ class CliBoundednessTests(unittest.TestCase):
                                 cli.main()
                         browser.assert_not_called()
                         self.assertEqual(err.exception.code, 2)
+
+    def test_aborted_crawl_returns_nonzero_even_with_prior_saves(self):
+        args = SimpleNamespace(
+            section="apps", db=Path("unused.db"), headful=False,
+            max_apps=10, category_limit=1, subcategory_limit=1,
+        )
+        stats = SimpleNamespace(
+            discovered=4, saved=1, failed=3, skipped_duplicates=0,
+        )
+        with patch("crawler.MyketCrawler") as factory:
+            fake = factory.return_value
+            fake.crawl.return_value = stats
+            fake.stopped_due_to_failures = True
+            with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                self.assertEqual(cli.run_crawler(args), 1)
+            fake.close.assert_called_once()
+
 
 
 if __name__ == "__main__":
