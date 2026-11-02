@@ -93,6 +93,9 @@ def run_crawler(args) -> int:
     )
     if interrupted:
         return 130
+    if crawler.stopped_due_to_failures:
+        print("Crawl stopped after repeated failures; saved records are intact.", file=sys.stderr)
+        return 1
     # Do not advertise a completely empty or unsuccessful crawl as successful.
     return 0 if stats.saved > 0 else 1
 

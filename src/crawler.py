@@ -14,6 +14,7 @@ from html_parser import create_app_details_from_html
 
 
 MYKET_HOSTS = {"myket.ir", "www.myket.ir"}
+MAX_CONSECUTIVE_FAILURES = 3
 
 
 def _path(url: str) -> str:
@@ -76,6 +77,8 @@ class MyketCrawler:
         self.subcategory_limit = subcategory_limit
         self.stats = CrawlStats()
         self.seen_packages: Set[str] = set()
+        self.consecutive_failures = 0
+        self.stopped_due_to_failures = False
         self.driver = self._build_driver(headless=headless)
 
     @staticmethod
@@ -88,7 +91,14 @@ class MyketCrawler:
         options.add_argument("--window-size=1440,1200")
         options.add_argument("--lang=fa-IR")
         driver = webdriver.Chrome(options=options)
-        driver.set_page_load_timeout(config.PAGE_LOAD_TIMEOUT)
+        try:
+            driver.set_page_load_timeout(config.PAGE_LOAD_TIMEOUT)
+        except BaseException:
+            try:
+                driver.quit()
+            except Exception:
+                pass
+            raise
         return driver
 
     def close(self) -> None:
@@ -119,6 +129,9 @@ class MyketCrawler:
 
     def _reached_limit(self) -> bool:
         return self.max_apps is not None and self.stats.saved >= self.max_apps
+
+    def _should_stop(self) -> bool:
+        return self.stopped_due_to_failures or self._reached_limit()
 
     def _extract_links(self, predicate: Callable[[str], bool]) -> List[str]:
         self._scroll_to_bottom()
@@ -159,7 +172,7 @@ class MyketCrawler:
 
     def _crawl_links(self, links: Iterable[str]) -> None:
         for url in links:
-            if self._reached_limit():
+            if self._should_stop():
                 return
 
             package_name = _path(url).split("/")[-1]
@@ -186,11 +199,20 @@ class MyketCrawler:
                     raise ValueError("Parsed package does not match the requested app")
                 app.save_to_db(str(self.db_path))
                 self.stats.saved += 1
+                self.consecutive_failures = 0
                 print(f"[saved] {app.package_name} — {app.name}")
             except Exception as exc:
                 self.stats.failed += 1
+                self.consecutive_failures += 1
+                if self.consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
+                    self.stopped_due_to_failures = True
                 print(f"[failed] {package_name}: {exc}")
                 print(traceback.format_exc())
+                if self.stopped_due_to_failures:
+                    print(
+                        f"[stopped] {MAX_CONSECUTIVE_FAILURES} consecutive app failures; "
+                        "stopping further requests."
+                    )
             finally:
                 self._sleep_ms(config.APP_DELAY_MS)
 
@@ -206,14 +228,14 @@ class MyketCrawler:
         collection_links = self._extract_collection_links()
 
         self._crawl_links(app_links)
-        if self._reached_limit():
+        if self._should_stop():
             return
 
         collection_count = self._limited_count(
             len(collection_links), self.subcategory_limit
         )
         for collection_url in collection_links[:collection_count]:
-            if self._reached_limit():
+            if self._should_stop():
                 return
             self._open(collection_url)
             self._crawl_links(self._extract_app_links())
@@ -230,13 +252,13 @@ class MyketCrawler:
 
         category_count = self._limited_count(len(categories), self.category_limit)
         for category_url in categories[:category_count]:
-            if self._reached_limit():
+            if self._should_stop():
                 return
             self._crawl_category_page(category_url)
 
     def crawl(self, sections: Iterable[str]) -> CrawlStats:
         for section in sections:
-            if self._reached_limit():
+            if self._should_stop():
                 break
             self.crawl_section(section)
         return self.stats
