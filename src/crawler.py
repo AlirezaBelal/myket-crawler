@@ -16,6 +16,12 @@ from html_parser import create_app_details_from_html
 
 MYKET_HOSTS = {"myket.ir", "www.myket.ir"}
 MAX_CONSECUTIVE_FAILURES = 3
+DEFAULT_NAVIGATION_BUDGET = 100
+
+
+class NavigationBudgetExceeded(RuntimeError):
+    """An extra browser navigation was blocked before it was issued."""
+
 
 
 def _path(url: str) -> str:
@@ -71,7 +77,13 @@ class MyketCrawler:
         max_apps: Optional[int] = None,
         category_limit: Optional[int] = None,
         subcategory_limit: Optional[int] = None,
+        max_navigations: Optional[int] = DEFAULT_NAVIGATION_BUDGET,
     ):
+        if max_navigations is not None and max_navigations <= 0:
+            raise ValueError("max_navigations must be greater than zero")
+        self.max_navigations = max_navigations
+        self.navigations = 0
+        self.budget_exhausted = False
         self.db_path = Path(db_path)
         self.max_apps = max_apps
         self.category_limit = category_limit
@@ -113,6 +125,14 @@ class MyketCrawler:
     def _open(self, url: str) -> None:
         if not is_myket_url(url):
             raise ValueError("Navigation requires an allowed HTTPS Myket URL")
+        if self.max_navigations is not None and self.navigations >= self.max_navigations:
+            self.budget_exhausted = True
+            raise NavigationBudgetExceeded(
+                f"Navigation budget reached ({self.max_navigations}); no further pages opened"
+            )
+        # Count attempted driver.get() calls, including navigation failures.
+        # Selenium subresources and HTTP redirects are not counted here.
+        self.navigations += 1
         self.driver.get(url)
         self._sleep_ms(config.PAGE_DELAY_MS)
         if not is_myket_url(self.driver.current_url):
@@ -206,6 +226,8 @@ class MyketCrawler:
                 self.stats.saved += 1
                 self.consecutive_failures = 0
                 print(f"[saved] {app.package_name} — {app.name}")
+            except NavigationBudgetExceeded:
+                raise
             except Exception as exc:
                 self.stats.failed += 1
                 self.consecutive_failures += 1
@@ -224,11 +246,15 @@ class MyketCrawler:
     def crawl_app_url(self, url: str) -> CrawlStats:
         if not is_app_url(url):
             raise ValueError(f"Not a Myket app URL: {url}")
-        self._crawl_links([url])
+        try:
+            self._crawl_links([url])
+        except NavigationBudgetExceeded:
+            pass
         return self.stats
 
-    def _crawl_category_page(self, category_url: str) -> None:
-        self._open(category_url)
+    def _crawl_category_page(self, category_url: str, *, already_open: bool = False) -> None:
+        if not already_open:
+            self._open(category_url)
         app_links = self._extract_app_links()
         collection_links = self._extract_collection_links()
 
@@ -252,7 +278,7 @@ class MyketCrawler:
         categories = self._extract_category_links(section)
 
         if not categories:
-            self._crawl_category_page(base_url)
+            self._crawl_category_page(base_url, already_open=True)
             return
 
         category_count = self._limited_count(len(categories), self.category_limit)
@@ -262,8 +288,11 @@ class MyketCrawler:
             self._crawl_category_page(category_url)
 
     def crawl(self, sections: Iterable[str]) -> CrawlStats:
-        for section in sections:
-            if self._should_stop():
-                break
-            self.crawl_section(section)
+        try:
+            for section in sections:
+                if self._should_stop():
+                    break
+                self.crawl_section(section)
+        except NavigationBudgetExceeded:
+            print(f"[stopped] Browser navigation budget exhausted after {self.navigations} pages.")
         return self.stats
