@@ -1,5 +1,8 @@
 # Product roadmap
 
+**Local-first product handoff:** The demo, offline research dashboard, SQLite/CSV export, guarded optional crawler, and deterministic CI are delivered. See [PRODUCT.md](PRODUCT.md) for shipped scope, test acceptance and limitations. Unchecked items below are optional future work, not promises that the live marketplace integration is currently verified.
+
+
 `myket-crawler` should evolve from a one-off scraper into a reliable data collector that can sit beside `cafebazaar-crawler` in a repeatable app-market research workflow.
 
 ## Product goal
@@ -14,6 +17,7 @@ The product is the **dataset and collection workflow**, not Selenium itself.
 - [x] Headless execution without a hardcoded driver path
 - [x] SQLite output with stable `package_name + source` identity
 - [x] CLI controls for smoke tests and bounded runs
+- [x] Shared Selenium navigation budget (100 by default for bounded runs) and incomplete-run exit reporting
 - [x] Unit tests for deterministic parsing and persistence
 - [x] CI for every push and pull request
 - [x] Add a bounded Myket live smoke on a weekly schedule or explicit manual dispatch (not on PRs); offline regression tests cover redirects and package identity
@@ -28,6 +32,7 @@ The product is the **dataset and collection workflow**, not Selenium itself.
 - [x] Local privacy-focused CSV export with spreadsheet-formula protection
 - [x] One-click Windows demo launcher
 - [x] Responsive browser UI smoke and offline tests
+- [x] Persian quickstart and final local-first product handoff
 - [ ] Independent recent live verification on an authorized environment after this product update
 
 ## Phase 2 — Historical data
