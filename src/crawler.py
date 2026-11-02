@@ -1,5 +1,6 @@
 import time
 import traceback
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable, List, Optional, Set
@@ -34,7 +35,7 @@ def is_myket_url(url: str) -> bool:
 
 def is_app_url(url: str) -> bool:
     path = _path(url)
-    return is_myket_url(url) and path.startswith("/app/") and len(path) > len("/app/")
+    return is_myket_url(url) and re.fullmatch(r"/app/[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+", path) is not None
 
 
 def is_collection_url(url: str) -> bool:
@@ -110,8 +111,12 @@ class MyketCrawler:
             time.sleep(milliseconds / 1000)
 
     def _open(self, url: str) -> None:
+        if not is_myket_url(url):
+            raise ValueError("Navigation requires an allowed HTTPS Myket URL")
         self.driver.get(url)
         self._sleep_ms(config.PAGE_DELAY_MS)
+        if not is_myket_url(self.driver.current_url):
+            raise ValueError("Navigation left an allowed Myket URL")
 
     def _scroll_to_bottom(self) -> None:
         previous_height = 0

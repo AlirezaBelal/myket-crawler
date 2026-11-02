@@ -97,7 +97,7 @@ def run_crawler(args) -> int:
         print("Crawl stopped after repeated failures; saved records are intact.", file=sys.stderr)
         return 1
     # Do not advertise a completely empty or unsuccessful crawl as successful.
-    return 0 if stats.saved > 0 else 1
+    return 0 if stats.saved > 0 and stats.failed == 0 else 1
 
 
 def main() -> int:

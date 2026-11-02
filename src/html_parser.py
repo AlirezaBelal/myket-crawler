@@ -1,5 +1,6 @@
 import re
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlparse
 from typing import Tuple
 
 import jdatetime
@@ -110,7 +111,7 @@ def _detail_link(driver, label: str, default: str = "") -> str:
 
 def create_app_details_from_html(driver, url: str) -> AppDetails:
     name = _optional_text(driver, By.XPATH, "//h1")
-    package_name = url.rstrip("/").split("/")[-1].split("?")[0]
+    package_name = urlparse(url).path.rstrip("/").split("/")[-1]
 
     author_name = _detail_text(driver, "سازنده")
     author_phone_number = _optional_text(
