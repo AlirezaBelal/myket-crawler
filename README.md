@@ -20,7 +20,7 @@ python src/main.py --demo
 
 Open `data/demo-report.html`. This produces **12 clearly fictional sample apps** and does not launch Selenium, open Myket or make any network request. If `data/demo.db` exists, choose a different path with `--db data/demo-2.db`. Existing databases are never overwritten by the demo.
 
-The Persian-first dashboard supports search, category filters, sorting by installs or rating, responsive mobile cards, accessible controls and light/dark mode. CSS and JavaScript are embedded into one local HTML file; no hosting, analytics, fonts, servers or CDNs are required.
+The Persian-first dashboard supports search, category filters, sorting by installs or rating, responsive mobile cards, visible demo-data badges at mobile sizes, accessible controls and light/dark mode. Exports are written atomically and cannot overwrite the source SQLite file. CSS and JavaScript are embedded into one local HTML file; no hosting, analytics, fonts, servers or CDNs are required.
 
 ## Work with an existing SQLite dataset (offline)
 
@@ -61,7 +61,7 @@ Use `--headful` to see Chrome or `--db data/custom.db` to select your output fil
 python tests/live_smoke.py --yes-live
 ```
 
-The live test uses a temporary SQLite database and attempts a bounded public-app crawl; it needs network access and Chrome. It is never run for PRs. Existing CI schedules a weekly live contract check or it can be dispatched explicitly; those runs should be monitored because Myket's pages can change. A successful live check is only evidence for the tested flow, not proof of unlimited crawling reliability.
+The live test uses a temporary SQLite database and attempts a bounded public-app crawl; it needs network access and Chrome. It is never run for PRs. The live contract check is available only through explicit manual workflow dispatch (not weekly or on PRs); do not run it until the source's permissions and access terms are verified. A successful live check is only evidence for the tested flow, not proof of unlimited crawling reliability.
 
 ## Tests and project layout
 
