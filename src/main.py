@@ -45,6 +45,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Stop after saving this many unique apps.",
     )
     parser.add_argument(
+        "--max-navigations", type=int, default=None,
+        help="Maximum Selenium page navigations across discovery and details "
+             "(default: 100 for bounded crawls; --full has no default cap).",
+    )
+    parser.add_argument(
         "--category-limit", type=int, default=None,
         help="Limit categories per section.",
     )
@@ -65,8 +70,13 @@ def build_parser() -> argparse.ArgumentParser:
 
 def run_crawler(args) -> int:
     # Selenium is an optional dependency for offline demo/report/CSV commands.
-    from crawler import MyketCrawler
+    from crawler import DEFAULT_NAVIGATION_BUDGET, MyketCrawler
 
+    requested_budget = getattr(args, "max_navigations", None)
+    max_navigations = (
+        requested_budget if requested_budget is not None
+        else None if getattr(args, "full", False) else DEFAULT_NAVIGATION_BUDGET
+    )
     sections = ("apps", "games") if args.section == "all" else (args.section,)
     crawler = MyketCrawler(
         args.db,
@@ -74,6 +84,7 @@ def run_crawler(args) -> int:
         max_apps=args.max_apps,
         category_limit=args.category_limit,
         subcategory_limit=args.subcategory_limit,
+        max_navigations=max_navigations,
     )
     interrupted = False
     try:
@@ -87,12 +98,16 @@ def run_crawler(args) -> int:
 
     print(
         "== Crawl summary == "
-        "discovered={} saved={} failed={} duplicates={}".format(
-            stats.discovered, stats.saved, stats.failed, stats.skipped_duplicates
+        "discovered={} saved={} failed={} duplicates={} navigations={}".format(
+            stats.discovered, stats.saved, stats.failed, stats.skipped_duplicates,
+            getattr(crawler, "navigations", 0),
         )
     )
     if interrupted:
         return 130
+    if crawler.budget_exhausted:
+        print("Navigation budget reached; saved records are intact.", file=sys.stderr)
+        return 1
     if crawler.stopped_due_to_failures:
         print("Crawl stopped after repeated failures; saved records are intact.", file=sys.stderr)
         return 1
@@ -107,6 +122,7 @@ def main() -> int:
         parser.error("--report-limit must be between 1 and 1000")
     for option, value in (
         ("--max-apps", args.max_apps),
+        ("--max-navigations", args.max_navigations),
         ("--category-limit", args.category_limit),
         ("--subcategory-limit", args.subcategory_limit),
     ):
@@ -133,7 +149,8 @@ def main() -> int:
             return 0
 
         if not args.full and not any((
-            args.max_apps, args.category_limit, args.subcategory_limit
+            args.max_apps, args.max_navigations,
+            args.category_limit, args.subcategory_limit
         )):
             print("No network requests made. Start with --demo or a small crawl:")
             print("python src/main.py --section apps --category-limit 1 "

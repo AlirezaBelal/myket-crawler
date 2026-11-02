@@ -154,6 +154,7 @@ class CliBoundednessTests(unittest.TestCase):
             fake = factory.return_value
             fake.crawl.return_value = stats
             fake.stopped_due_to_failures = True
+            fake.budget_exhausted = False
             with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
                 self.assertEqual(cli.run_crawler(args), 1)
             fake.close.assert_called_once()

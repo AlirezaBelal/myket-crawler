@@ -6,6 +6,8 @@ Collect permitted public listings with Selenium, save them to SQLite, inspect th
 
 The app is designed to complement [CafeBazaar Crawler](https://github.com/AlirezaBelal/cafebazaar-crawler); both use the same `app_details` SQLite schema.
 
+**Product guides:** [راهنمای سریع فارسی](QUICKSTART.fa.md) · [Delivery status and supported scope](PRODUCT.md) · [Roadmap](ROADMAP.md).
+
 ## Start with an offline demo — no installation beyond Python
 
 Requires **Python 3.9+**.
@@ -46,14 +48,16 @@ python -m venv .venv
 # macOS / Linux: source .venv/bin/activate
 python -m pip install -r requirements.txt
 
-python src/main.py --section apps --category-limit 1 --subcategory-limit 1 --max-apps 3
+python src/main.py --section apps --category-limit 1 --subcategory-limit 1 --max-apps 3 --max-navigations 20
 ```
 
 Your local database defaults to `data/myket_results.db`. The app scans Myket's public app and game listings, collects unique packages and saves metadata to SQLite. Captured fields include install counts, category, version, rating, update date, descriptions, and optional developer contacts **in the local raw database only**.
 
-An unqualified `python src/main.py` intentionally does **not** crawl anything. Full, potentially unbounded collection requires `python src/main.py --full` and should not be used as your first test. Even a `--max-apps` run is not a global request budget: discovery and retries can generate additional requests.
+An unqualified `python src/main.py` intentionally does **not** crawl anything. A bounded run has a **default safety budget of 100 Selenium page navigations**, shared across discovery, category, collection, and detail pages. Use `--max-navigations N` (positive integer) to lower or raise it. `--max-apps` limits successful saves, not page navigations. The crawler stops *before* issuing the first navigation beyond the budget, preserves saved records, and exits nonzero when stopped early. The result summary reports attempted `navigations`, including failed browser loads.
 
-Use `--headful` to see Chrome or `--db data/custom.db` to select your output file. Numeric crawl limits must be strictly positive when present.
+**Scope of the budget:** it counts calls to Selenium `driver.get()`, **not** individual HTTP subresource requests, automatic redirects, or loads initiated by the page itself. Browser access permissions and conservative delays still matter. Use `--full` only after confirming large collection is permitted: without `--max-navigations`, it deliberately disables the default navigation cap. Even with `--full`, you can supply `--max-navigations N`. No network request or browser startup occurs in default, demo, report or CSV modes.
+
+Use `--headful` to see Chrome or `--db data/custom.db` to select your output file. Numeric crawl limits must be strictly positive when present. Exit status is `0` for a completed crawl that saves at least one app with no recorded detail failures, `1` for empty/partial/budget-stopped runs, `2` for CLI/input errors and `130` for interruption. A successful CLI exit is not evidence of complete Myket catalogue coverage.
 
 ### Opt-in live smoke
 
