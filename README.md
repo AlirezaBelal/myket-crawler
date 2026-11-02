@@ -61,7 +61,7 @@ Use `--headful` to see Chrome or `--db data/custom.db` to select your output fil
 python tests/live_smoke.py --yes-live
 ```
 
-The live test uses a temporary SQLite database and attempts a bounded public-app crawl; it needs network access and Chrome. It is never run for PRs. The live contract check is available only through explicit manual workflow dispatch (not weekly or on PRs); do not run it until the source's permissions and access terms are verified. A successful live check is only evidence for the tested flow, not proof of unlimited crawling reliability.
+The live test uses a temporary SQLite database and attempts a bounded public-app crawl; it needs network access and Chrome. It is never run for PRs. The live contract check is available only through explicit manual workflow dispatch (not weekly or on PRs); do not run it until the source's permissions and access terms are verified. A successful live check is only evidence for the tested flow, not proof of unlimited crawling reliability. The crawler stops after **three consecutive app-detail failures** to avoid repeatedly requesting broken pages. A stopped crawl exits nonzero and preserves previously saved records.
 
 ## Tests and project layout
 
