@@ -95,6 +95,13 @@ def _atomic_output(db_path: Path, output: Path, *, encoding: str, newline=None):
     target = Path(output).expanduser().resolve()
     if target == source or (target.exists() and os.path.samefile(source, target)):
         raise ValueError("Output path must not overwrite the input SQLite database")
+    # SQLite recovery files belong to the input database too.
+    for suffix in ("-wal", "-shm", "-journal"):
+        sidecar = Path(str(source) + suffix)
+        if target == sidecar or (
+            target.exists() and sidecar.exists() and os.path.samefile(target, sidecar)
+        ):
+            raise ValueError("Output path must not overwrite SQLite recovery files")
     target.parent.mkdir(parents=True, exist_ok=True)
     temp_path = None
     try:
