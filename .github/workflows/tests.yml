@@ -37,6 +37,11 @@ jobs:
         run: python -m compileall -q src tests
       - name: Run offline tests
         run: python -m unittest discover -s tests -v
+      - name: Offline product CLI smoke (synthetic data only)
+        run: |
+          python src/main.py --demo --db artifacts/product-demo.db
+          python src/main.py --db artifacts/product-demo.db --report artifacts/product-report.html
+          python src/main.py --db artifacts/product-demo.db --export-csv artifacts/product-apps.csv
 
   live-smoke:
     # Avoid crawling a third-party website on untrusted PR submissions.
