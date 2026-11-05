@@ -1,0 +1,66 @@
+name: GitHub Pages
+
+on:
+  push:
+    branches: [master]
+    paths: ['src/**', 'docs/favicon.svg', '.github/workflows/pages.yml']
+  pull_request:
+    branches: [master]
+    paths: ['src/**', 'docs/favicon.svg', '.github/workflows/pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Generate the offline sample dashboard
+        run: |
+          mkdir -p docs
+          python src/main.py --demo --db "$RUNNER_TEMP/myket-demo.db"
+          cp "$RUNNER_TEMP/myket-demo-report.html" docs/index.html
+          python - <<'PY'
+          from pathlib import Path
+          page = Path('docs/index.html')
+          html = page.read_text(encoding='utf-8')
+          html = html.replace("img-src 'none'", "img-src 'self'")
+          html = html.replace('</head>', '<link rel="icon" href="./favicon.svg" type="image/svg+xml"></head>')
+          page.write_text(html, encoding='utf-8')
+          assert 'دموی ساختگی · غیرواقعی' in html
+          assert 'connect-src \'none\'' in html and 'img-src \'self\'' in html
+          assert 'fetch(' not in html and 'src="https://' not in html
+          PY
+      - name: Verify the generated dashboard
+        run: |
+          python -m unittest discover -s tests -p 'test_report_ui.py' -v
+          test -f docs/index.html
+          test -f docs/favicon.svg
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - uses: actions/download-pages-artifact@v3
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
