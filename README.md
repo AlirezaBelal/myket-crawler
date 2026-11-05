@@ -110,3 +110,9 @@ Environment variables include `MYKET_PAGE_DELAY_MS` (default 1200), `MYKET_APP_D
 - [Roadmap](ROADMAP.md): history, incremental collection and cross-store analysis are potential later phases, not shipped functionality.
 
 Licensed under [MIT](LICENSE).
+
+## Live browser demo
+
+[Open the GitHub Pages demo](https://alirezabelal.github.io/myket-crawler/)
+
+The browser demo is an offline report built from fictional app listings. It supports search, category filters, sorting, details, visual summaries, and light/dark mode; it does not launch Selenium or fetch Myket.
