@@ -11,14 +11,16 @@ permissions:
 
 jobs:
   unit-tests:
+    name: unit-tests (${{ matrix.check_os || matrix.os }}, ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             python-version: "3.9"
+            check_os: ubuntu-latest
           - os: windows-latest
             python-version: "3.12"
           - os: ubuntu-latest
@@ -65,3 +67,4 @@ jobs:
           pip install -r requirements.txt
       - name: Run live Myket smoke crawl
         run: python tests/live_smoke.py --yes-live
+
