@@ -53,7 +53,7 @@ class ReportDesignTests(unittest.TestCase):
             for identifier in (
                 "overview", "categories", "inventory", "search", "category-filter",
                 "sort-order", "reset-filters", "empty-reset", "empty",
-                "results-count", "theme-toggle", "apps",
+                "results-count", "theme-toggle", "apps", "local-data-file", "local-data-status", "reset-local-data",
             ):
                 self.assertIn(identifier, parser.ids)
             self.assertIn("دموی ساختگی · غیرواقعی", markup)
@@ -76,6 +76,8 @@ class ReportDesignTests(unittest.TestCase):
             self.assertNotIn('src="https://', markup)
             self.assertNotIn('@import', markup)
             self.assertNotIn('fetch(', markup)
+            self.assertIn("بدون بارگذاری یا ذخیره‌سازی", markup)
+            self.assertIn("ReportImport", markup)
 
     def test_escaped_category_and_name_dont_create_html(self):
         with tempfile.TemporaryDirectory() as folder:
