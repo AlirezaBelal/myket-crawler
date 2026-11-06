@@ -39,6 +39,8 @@ jobs:
         run: python -m compileall -q src tests
       - name: Run offline tests
         run: python -m unittest discover -s tests -v
+      - name: Test browser-local import parser
+        run: node --test tests/test_report_import.cjs
       - name: Offline product CLI smoke (synthetic data only)
         run: |
           python src/main.py --demo --db artifacts/product-demo.db

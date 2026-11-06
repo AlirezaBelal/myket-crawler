@@ -70,6 +70,28 @@ def main():
                         assert page.locator("html").get_attribute("data-theme") == "dark"
                         assert page.locator("#theme-toggle").get_attribute("aria-pressed") == "true"
                         page.screenshot(path=str(ARTIFACTS / "desktop-dark.png"), full_page=True)
+
+                        import_file = Path(tmp) / "browser-import.csv"
+                        import_file.write_text(
+                            "package_name,name,category,sub_category,installation_count,average_score,comment_count,version,last_update,source,developer_email\n"
+                            'ir.example.imported,"Imported, ""quoted""",QA,Sample,42,4.8,3,1.0,2026-10-01,MYKET,ignored@example.test\n'
+                            'ir.example.unsafe,"<img src=x onerror=alert(1)>",QA,Sample,7,0,0,1.0,2026-10-02,MYKET,private@example.test\n',
+                            encoding="utf-8-sig",
+                        )
+                        page.locator("#local-data-file").set_input_files(str(import_file))
+                        page.wait_for_function("document.querySelector('#local-data-status').textContent.includes('فقط در این زبانه پردازش شد.')")
+                        assert page.locator("#apps tbody tr").count() == 2
+                        assert 'Imported, "quoted"' in page.locator(".app-title").all_text_contents()
+                        assert page.locator("img").count() == 0, "Imported text must not become executable markup"
+                        assert "private@example.test" not in page.locator("body").inner_text()
+                        assert "بدون بارگذاری" in page.locator(".report-mode").inner_text()
+                        page.locator("#search").fill("quoted")
+                        assert page.locator("#apps tbody tr:visible").count() == 1
+                        page.locator("#reset-filters").click()
+                        assert page.locator("#apps tbody tr:visible").count() == 2
+                        page.locator("#reset-local-data").click()
+                        assert page.locator("#apps tbody tr:visible").count() == 12
+                        assert "ساختگی" in page.locator(".report-mode").inner_text()
                     page.close()
             finally:
                 browser.close()
