@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import AxeBuilder from '@axe-core/playwright';
 import { mkdir, writeFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 const out='qa-evidence'; await mkdir(out,{recursive:true});
@@ -23,6 +24,10 @@ for(const [name,url] of sites) for(const width of [320,375,390,768,1024,1440,192
  await page.keyboard.press('Tab');
  assert(await page.evaluate(()=>{const e=document.activeElement;const c=getComputedStyle(e);return e!==document.body&&(c.outlineStyle!=='none'||c.boxShadow!=='none');}),'visible keyboard focus');
  for(const summary of await page.locator('summary').all()){await summary.focus();await page.keyboard.press('Enter');}
+ const accessibility=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();
+ await writeFile(out+'/'+name+'-'+width+'-accessibility.json',JSON.stringify(accessibility,null,2));
+ assert.deepEqual(accessibility.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)})),[],'accessibility violations');
+ if(name==='product') assert(await page.locator('h1').evaluate(e=>parseFloat(getComputedStyle(e).fontSize)<=60),'compact hero scale');
  const external=requests.filter(u=>/^https?:/.test(u)&&new URL(u).origin!==new URL(url).origin);
  assert.equal(external.length,0,'unexpected external request '+external.join(','));
  assert.deepEqual(errors,[]);assert.deepEqual(bad,[]);
