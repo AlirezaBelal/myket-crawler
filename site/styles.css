@@ -201,3 +201,5 @@ pre code { white-space: pre; overflow-wrap: normal; }
   .header-cta, .site-nav a { font-size: .8125rem; }
 }
 @media (max-width:380px) { .header-cta { font-size: .75rem; } pre { font-size: .8125rem; } }
+
+pre:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
