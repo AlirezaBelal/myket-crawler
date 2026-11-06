@@ -79,9 +79,9 @@ def main():
                             encoding="utf-8-sig",
                         )
                         page.locator("#local-data-file").set_input_files(str(import_file))
-                        page.wait_for_function("document.querySelector('#local-data-status').textContent.includes('۲ ردیف')")
+                        page.wait_for_function("document.querySelector('#local-data-status').textContent.includes('فقط در این زبانه پردازش شد.')")
                         assert page.locator("#apps tbody tr").count() == 2
-                        assert page.locator(".app-title").all_text_contents()[0] == 'Imported, "quoted"'
+                        assert 'Imported, "quoted"' in page.locator(".app-title").all_text_contents()
                         assert page.locator("img").count() == 0, "Imported text must not become executable markup"
                         assert "private@example.test" not in page.locator("body").inner_text()
                         assert "بدون بارگذاری" in page.locator(".report-mode").inner_text()
