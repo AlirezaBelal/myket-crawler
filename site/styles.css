@@ -181,3 +181,25 @@ pre code { overflow-wrap: anywhere; white-space: pre-wrap; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition-duration: .01ms !important; }
 }
+
+/* Compact product typography: preserve the existing palette and illustration. */
+:root { font-family: "Segoe UI Variable", "Segoe UI", Aptos, system-ui, sans-serif; --space-8: 5rem; }
+body { font-size: 1rem; }
+h1 { max-width: 15ch; font-size: clamp(2.25rem, 4.2vw, 3.75rem); font-weight: 700; letter-spacing: -.04em; line-height: 1.08; }
+h2, .architecture-layout h2, .responsible-section h2, .final-cta h2 { font-size: clamp(1.5rem, 2.7vw, 2.25rem); font-weight: 650; letter-spacing: -.035em; line-height: 1.18; }
+.hero { padding-block: clamp(3rem, 5vw, 4.5rem); }
+.hero-lede, .section-heading > p:last-child, .architecture-copy p { font-size: 1rem; line-height: 1.65; }
+.workflow-list p, .capability-list p { font-size: .9375rem; }
+.eyebrow { letter-spacing: .055em; font-weight: 700; }
+pre { font-size: .8125rem; }
+pre code { white-space: pre; overflow-wrap: normal; }
+.live-run-content pre { white-space: pre; }
+@media (max-width:650px) {
+  h1 { max-width: 15ch; font-size: clamp(2rem, 8.5vw, 2.5rem); }
+  .hero { padding-block: 2.5rem 3rem; gap: 2rem; }
+  .workflow-section, .capabilities-layout, .install-section, .final-cta, .architecture-layout, .responsible-layout { padding-block: 3rem; }
+  .header-cta, .site-nav a { font-size: .8125rem; }
+}
+@media (max-width:380px) { .header-cta { font-size: .75rem; } pre { font-size: .8125rem; } }
+
+pre:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
