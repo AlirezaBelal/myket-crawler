@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f2ec">
+    <meta name="description" content="Myket Crawler is a local Python and Selenium tool for collecting permitted public Android app metadata into SQLite.">
+    <meta name="robots" content="index,follow">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self'; style-src 'self'; font-src 'self'; script-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+    <link rel="canonical" href="https://alirezabelal.github.io/myket-crawler/">
+    <link rel="icon" href="./assets/myket-mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="./styles.css">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Myket Crawler — Local app metadata research">
+    <meta property="og:description" content="A deliberately bounded Python and Selenium crawler with local SQLite storage and offline Persian reports.">
+    <meta property="og:url" content="https://alirezabelal.github.io/myket-crawler/">
+    <title>Myket Crawler — Local Android app research</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <a class="wordmark" href="#top" aria-label="Myket Crawler home">
+        <img src="./assets/myket-mark.svg" width="38" height="38" alt="">
+        <span>Myket <b>Crawler</b></span>
+      </a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a href="#workflow">How it works</a>
+        <a href="#capabilities">Capabilities</a>
+        <a href="#install">Installation</a>
+      </nav>
+      <a class="header-cta" href="https://github.com/AlirezaBelal/myket-crawler" target="_blank" rel="noopener noreferrer">Get started on GitHub</a>
+    </header>
+
+    <main id="main">
+      <section class="hero section-shell" id="top" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="signal-dot" aria-hidden="true"></span>Independent local software</p>
+          <h1 id="hero-title">Collect with care.<br><span>Keep it local.</span></h1>
+          <p class="hero-lede">A Python and Selenium crawler for permitted public Myket app metadata, saved to a SQLite database on your own computer.</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="https://github.com/AlirezaBelal/myket-crawler" target="_blank" rel="noopener noreferrer">Get started on GitHub</a>
+            <a class="button button-secondary" href="#install">Installation guide</a>
+          </div>
+          <p class="hero-note">You run the crawler yourself. This website does not crawl Myket or process datasets.</p>
+          <ul class="technology-list" aria-label="Technology">
+            <li>Python</li><li>Selenium</li><li>SQLite</li><li>Persian reports</li>
+          </ul>
+        </div>
+        <figure class="hero-art">
+          <img src="./assets/crawler-workflow.svg" width="720" height="560" alt="Illustration of a local Python crawler following a permitted Myket page to collect app metadata into a SQLite database on the user's computer.">
+          <figcaption>Workflow illustration · not a live crawl or product screenshot</figcaption>
+        </figure>
+      </section>
+
+      <section class="fact-rail" aria-label="Product boundaries">
+        <div><span class="fact-number">01</span><p><strong>Runs on your machine</strong><br>Start every collection deliberately.</p></div>
+        <div><span class="fact-number">02</span><p><strong>Bounded navigation</strong><br>Set conservative page limits.</p></div>
+        <div><span class="fact-number">03</span><p><strong>Local persistence</strong><br>Keep the SQLite dataset in your care.</p></div>
+      </section>
+
+      <section class="section-shell workflow-section" id="workflow" aria-labelledby="workflow-title">
+        <div class="section-heading">
+          <p class="eyebrow">A clear path from page to database</p>
+          <h2 id="workflow-title">A collector you can see<br>and stop.</h2>
+          <p>Myket Crawler is a command-line tool, not a hosted service. It opens a browser only when you start an explicitly bounded collection.</p>
+        </div>
+        <ol class="workflow-list">
+          <li><span class="step-index">01</span><div><h3>Prepare locally</h3><p>Install Python dependencies and a supported Chrome or Chromium browser.</p></div></li>
+          <li><span class="step-index">02</span><div><h3>Choose a small scope</h3><p>Select the apps section and set category, app, and navigation limits.</p></div></li>
+          <li><span class="step-index">03</span><div><h3>Collect permitted metadata</h3><p>Selenium navigates public listing and detail pages; the parser checks package identity and supported fields.</p></div></li>
+          <li><span class="step-index">04</span><div><h3>Work with local output</h3><p>Records are persisted to SQLite. You can generate a Persian RTL report or a spreadsheet-safe CSV on your machine.</p></div></li>
+        </ol>
+      </section>
+
+      <section class="capabilities-section" id="capabilities" aria-labelledby="capabilities-title">
+        <div class="section-shell capabilities-layout">
+          <div class="section-heading">
+            <p class="eyebrow">Designed for deliberate collection</p>
+            <h2 id="capabilities-title">Useful control<br>without a remote service.</h2>
+            <p>The crawler keeps collection, storage, and offline review in one local workflow. It is best-effort and does not promise complete marketplace coverage.</p>
+          </div>
+          <div class="capability-list">
+            <article><span class="capability-mark" aria-hidden="true">A</span><div><h3>Explicit crawl scope</h3><p>Select apps or games and limit categories, subcategories, saved apps, and browser navigations.</p></div></article>
+            <article><span class="capability-mark" aria-hidden="true">B</span><div><h3>Structured local records</h3><p>Store supported app metadata in SQLite with a stable package and source identity.</p></div></article>
+            <article><span class="capability-mark" aria-hidden="true">C</span><div><h3>Offline Persian outputs</h3><p>Create a standalone RTL report or formula-safe CSV from a local database, with developer contacts omitted from both exports.</p></div></article>
+            <article><span class="capability-mark" aria-hidden="true">D</span><div><h3>Failure-aware collection</h3><p>Saved rows remain intact when a run stops early. Repeated detail failures stop the run instead of continuing indefinitely.</p></div></article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-shell install-section" id="install" aria-labelledby="install-title">
+        <div class="section-heading install-heading">
+          <p class="eyebrow">Start offline, then decide</p>
+          <h2 id="install-title">Get running in a few steps.</h2>
+          <p>First try synthetic records without Selenium, Chrome startup, or network access. When ready, install the browser dependencies before any permitted live crawl.</p>
+        </div>
+
+        <div class="install-grid">
+          <article class="install-panel">
+            <div class="panel-heading"><span class="panel-step">01</span><div><h3>Get the source</h3><p>Requires Python 3.9 or newer.</p></div></div>
+            <pre><code>git clone https://github.com/AlirezaBelal/myket-crawler.git
+cd myket-crawler</code></pre>
+            <a class="text-link" href="https://github.com/AlirezaBelal/myket-crawler" target="_blank" rel="noopener noreferrer">Browse the repository</a>
+          </article>
+          <article class="install-panel">
+            <div class="panel-heading"><span class="panel-step">02</span><div><h3>Create an environment</h3><p>Use the commands for your shell.</p></div></div>
+            <details class="command-details" open>
+              <summary>Windows PowerShell</summary>
+              <pre><code>py -3 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt</code></pre>
+            </details>
+            <details class="command-details">
+              <summary>macOS or Linux</summary>
+              <pre><code>python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements.txt</code></pre>
+            </details>
+            <p class="support-note">Live collection also requires Chrome or Chromium. Selenium Manager can locate a compatible driver on supported systems.</p>
+          </article>
+          <article class="install-panel install-panel-wide">
+            <div class="panel-heading"><span class="panel-step">03</span><div><h3>Try the offline demo</h3><p>Creates 12 fictional records in an ignored local database.</p></div></div>
+            <pre><code>python src/main.py --demo
+# Open data/demo-report.html</code></pre>
+            <p class="support-note">No browser automation or network connection is started. The demo will not overwrite an existing default database.</p>
+          </article>
+        </div>
+
+        <details class="live-run">
+          <summary>Run a small live collection</summary>
+          <div class="live-run-content">
+            <p>Only continue after confirming that the pages and data you intend to access are permitted. Review applicable Myket terms and access rules, use conservative delays, and never bypass authentication, CAPTCHA, rate limits, or anti-bot controls.</p>
+            <pre><code>python src/main.py --section apps --category-limit 1 \
+  --subcategory-limit 1 --max-apps 3 --max-navigations 20</code></pre>
+            <p>This example targets at most three successful saves and twenty calls to Selenium <code>driver.get()</code>. That limit does not cap browser subresources, redirects, or requests initiated by a page. A capped or partially failed run exits with status 1 and keeps saved records.</p>
+            <p>The database defaults to <code>data/myket_results.db</code>. Raw records may contain optional developer contact fields; keep the database private and review data-handling obligations before sharing it.</p>
+          </div>
+        </details>
+      </section>
+
+      <section class="architecture-section" aria-labelledby="architecture-title">
+        <div class="section-shell architecture-layout">
+          <div class="section-heading">
+            <p class="eyebrow">A small, inspectable stack</p>
+            <h2 id="architecture-title">Local by design.</h2>
+          </div>
+          <div class="architecture-copy">
+            <p><strong>Python CLI</strong> defines the run and its limits. <strong>Selenium</strong> drives a local Chrome or Chromium browser. The parser extracts supported metadata, and <strong>SQLite</strong> stores the records on the same computer.</p>
+            <p>Optional HTML and CSV outputs are generated from that local database. The hosted site is documentation only: it contains no crawler runtime, database, upload form, analytics, or marketplace connection.</p>
+            <a class="text-link" href="https://github.com/AlirezaBelal/myket-crawler/blob/master/PRODUCT.md" target="_blank" rel="noopener noreferrer">Read the supported-scope notes</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="responsible-section" aria-labelledby="responsible-title">
+        <div class="section-shell responsible-layout">
+          <div><p class="eyebrow">Responsible use</p><h2 id="responsible-title">Respect the source.<br>Protect the dataset.</h2></div>
+          <ul>
+            <li>Independent project; not affiliated with or endorsed by Myket.</li>
+            <li>Collect only public data you are authorized to access, under applicable terms and access rules.</li>
+            <li>Do not bypass authentication, CAPTCHA, rate limits, or anti-bot controls.</li>
+            <li>Developer contact fields may exist in raw local data. Keep that database private; exported reports and CSV omit those fields.</li>
+            <li>DOM changes, access restrictions, and partial failures can affect results. Successful completion does not prove full catalogue coverage.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="final-cta section-shell" aria-labelledby="final-title">
+        <p class="eyebrow">Your machine. Your scope. Your data.</p>
+        <h2 id="final-title">Start with the source.</h2>
+        <p>Review setup, safety limits, and supported commands before running a collection.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="https://github.com/AlirezaBelal/myket-crawler" target="_blank" rel="noopener noreferrer">Get started on GitHub</a>
+          <a class="button button-secondary" href="https://github.com/AlirezaBelal/myket-crawler/blob/master/QUICKSTART.fa.md" target="_blank" rel="noopener noreferrer">راهنمای سریع فارسی</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <a class="wordmark footer-wordmark" href="#top"><img src="./assets/myket-mark.svg" width="30" height="30" alt=""><span>Myket <b>Crawler</b></span></a>
+      <p>Independent local software · MIT License</p>
+      <nav aria-label="Footer navigation"><a href="https://github.com/AlirezaBelal/myket-crawler" target="_blank" rel="noopener noreferrer">Source</a><a href="https://github.com/AlirezaBelal/myket-crawler/blob/master/README.md" target="_blank" rel="noopener noreferrer">Documentation</a><a href="https://alirezabelal.github.io/work/lab/myket-crawler/" target="_blank" rel="noopener noreferrer">Portfolio</a></nav>
+    </footer>
+  </body>
+</html>
