@@ -3,10 +3,10 @@ name: GitHub Pages
 on:
   push:
     branches: [master]
-    paths: ['src/**', 'docs/favicon.svg', '.github/workflows/pages.yml']
+    paths: ['site/**', 'tests/test_product_site.mjs', '.github/workflows/pages.yml']
   pull_request:
     branches: [master]
-    paths: ['src/**', 'docs/favicon.svg', '.github/workflows/pages.yml']
+    paths: ['site/**', 'tests/test_product_site.mjs', '.github/workflows/pages.yml']
   workflow_dispatch:
 
 permissions:
@@ -17,33 +17,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-node@v4
         with:
-          python-version: '3.12'
-      - name: Generate the offline sample dashboard
+          node-version: 22
+      - name: Test the static product site
+        run: node --test tests/test_product_site.mjs
+      - name: Verify static publication files
         run: |
-          mkdir -p docs
-          python src/main.py --demo --db "$RUNNER_TEMP/myket-demo.db"
-          cp "$RUNNER_TEMP/myket-demo-report.html" docs/index.html
-          python - <<'PY'
-          from pathlib import Path
-          page = Path('docs/index.html')
-          html = page.read_text(encoding='utf-8')
-          html = html.replace("img-src 'none'", "img-src 'self'")
-          html = html.replace('</head>', '<link rel="icon" href="./favicon.svg" type="image/svg+xml"></head>')
-          page.write_text(html, encoding='utf-8')
-          assert 'دموی ساختگی · غیرواقعی' in html
-          assert 'connect-src \'none\'' in html and 'img-src \'self\'' in html
-          assert 'fetch(' not in html and 'src="https://' not in html
-          PY
-      - name: Verify the generated dashboard
-        run: |
-          python -m unittest discover -s tests -p 'test_report_ui.py' -v
-          test -f docs/index.html
-          test -f docs/favicon.svg
+          test -f site/index.html
+          test -f site/styles.css
+          test -f site/assets/myket-mark.svg
+          test -f site/assets/crawler-workflow.svg
+          ! grep -Eiq '<script|<form|<iframe|fonts\.googleapis|googletagmanager' site/index.html
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: docs
+          path: site
   deploy:
     if: github.event_name != 'pull_request'
     needs: build
@@ -59,6 +47,6 @@ jobs:
       - uses: actions/configure-pages@v5
         with:
           enablement: true
-      - name: Deploy to GitHub Pages
+      - name: Deploy static product website
         id: deployment
         uses: actions/deploy-pages@v4

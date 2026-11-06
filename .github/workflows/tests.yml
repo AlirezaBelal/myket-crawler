@@ -31,16 +31,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Compile source and tests
         run: python -m compileall -q src tests
-      - name: Run offline tests
+      - name: Run offline Python tests
         run: python -m unittest discover -s tests -v
       - name: Test browser-local import parser
         run: node --test tests/test_report_import.cjs
+      - name: Test static product website
+        run: node --test tests/test_product_site.mjs
       - name: Offline product CLI smoke (synthetic data only)
         run: |
           python src/main.py --demo --db artifacts/product-demo.db
@@ -48,8 +53,7 @@ jobs:
           python src/main.py --db artifacts/product-demo.db --export-csv artifacts/product-apps.csv
 
   live-smoke:
-    # Avoid crawling a third-party website on untrusted PR submissions.
-    # Live requests require a deliberate manual workflow dispatch; never run weekly or on PRs.
+    # Live requests require a deliberate manual workflow dispatch; never run on PRs or a schedule.
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -69,4 +73,3 @@ jobs:
           pip install -r requirements.txt
       - name: Run live Myket smoke crawl
         run: python tests/live_smoke.py --yes-live
-

@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 560" role="img" aria-labelledby="title desc">
+  <title id="title">Local Myket Crawler workflow illustration</title>
+  <desc id="desc">A local workstation runs the Python crawler. Selenium visits a permitted public listing and detail page, then supported metadata is written to a SQLite database on the same computer.</desc>
+  <defs>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#c9c3b8" opacity=".52"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 10 5 0 10Z" fill="#d72d63"/>
+    </marker>
+  </defs>
+  <rect width="720" height="560" fill="#eeeae2"/>
+  <rect width="720" height="560" fill="url(#grid)"/>
+  <path d="M32 44h88M32 50h48" stroke="#a9a397" stroke-width="2"/>
+  <text x="32" y="76" fill="#686861" font-family="Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="1.8">LOCAL EXECUTION · ARCHITECTURE</text>
+
+  <rect x="44" y="126" width="278" height="326" rx="10" fill="#202228"/>
+  <rect x="44" y="126" width="278" height="42" rx="10" fill="#303239"/>
+  <path d="M44 158h278" stroke="#44464d"/>
+  <circle cx="65" cy="147" r="4" fill="#e15c7d"/>
+  <circle cx="80" cy="147" r="4" fill="#d9a74a"/>
+  <circle cx="95" cy="147" r="4" fill="#8bb873"/>
+  <text x="116" y="151" fill="#bdbdc0" font-family="Arial,sans-serif" font-size="10">your computer</text>
+  <rect x="68" y="192" width="230" height="82" rx="5" fill="#f8f5ef"/>
+  <rect x="68" y="192" width="5" height="82" rx="2" fill="#d72d63"/>
+  <text x="88" y="218" fill="#952143" font-family="Arial,sans-serif" font-size="10" font-weight="700" letter-spacing="1.2">01 · COMMAND LINE</text>
+  <text x="88" y="244" fill="#202228" font-family="Consolas,monospace" font-size="16" font-weight="700">python src/main.py</text>
+  <text x="88" y="262" fill="#66676c" font-family="Arial,sans-serif" font-size="10">scope + navigation budget</text>
+  <path d="M183 275v29" stroke="#d72d63" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="68" y="313" width="230" height="74" rx="5" fill="#f8f5ef"/>
+  <rect x="68" y="313" width="5" height="74" rx="2" fill="#d72d63"/>
+  <text x="88" y="338" fill="#952143" font-family="Arial,sans-serif" font-size="10" font-weight="700" letter-spacing="1.2">02 · BROWSER ADAPTER</text>
+  <text x="88" y="365" fill="#202228" font-family="Arial,sans-serif" font-size="16" font-weight="700">Selenium → Chrome</text>
+  <text x="88" y="403" fill="#bdbdc0" font-family="Arial,sans-serif" font-size="10">Collection begins only when you run it.</text>
+
+  <path d="M322 348h78v-116h50" fill="none" stroke="#d72d63" stroke-width="2" stroke-dasharray="5 6" marker-end="url(#arrow)"/>
+  <path d="M450 352h-49v95h-79" fill="none" stroke="#d72d63" stroke-width="2" stroke-dasharray="5 6" marker-end="url(#arrow)"/>
+
+  <rect x="452" y="144" width="228" height="164" rx="8" fill="#fffefa" stroke="#cfc9bf"/>
+  <text x="474" y="174" fill="#952143" font-family="Arial,sans-serif" font-size="10" font-weight="700" letter-spacing="1.3">03 · AUTHORIZED PUBLIC PAGES</text>
+  <rect x="474" y="191" width="184" height="45" rx="4" fill="#f2efe8"/>
+  <circle cx="493" cy="213" r="8" fill="#d72d63"/>
+  <path d="M490 213h6m-3-3v6" stroke="#fff" stroke-width="1.5"/>
+  <text x="510" y="210" fill="#24252b" font-family="Arial,sans-serif" font-size="12" font-weight="700">Listing page</text>
+  <text x="510" y="225" fill="#696a70" font-family="Arial,sans-serif" font-size="10">discover app URLs</text>
+  <rect x="474" y="247" width="184" height="42" rx="4" fill="#f2efe8"/>
+  <rect x="486" y="259" width="14" height="18" rx="2" fill="#d8e9a1"/>
+  <path d="M490 264h6m-6 4h6m-6 4h4" stroke="#4c5e2f" stroke-width="1.3"/>
+  <text x="510" y="266" fill="#24252b" font-family="Arial,sans-serif" font-size="12" font-weight="700">App detail</text>
+  <text x="510" y="280" fill="#696a70" font-family="Arial,sans-serif" font-size="10">parse supported fields</text>
+
+  <rect x="452" y="365" width="228" height="100" rx="8" fill="#202228"/>
+  <ellipse cx="493" cy="397" rx="22" ry="8" fill="#d8e9a1"/>
+  <path d="M471 397v28c0 4 10 8 22 8s22-4 22-8v-28" fill="#d8e9a1"/>
+  <ellipse cx="493" cy="425" rx="22" ry="8" fill="#b6cb79"/>
+  <text x="527" y="402" fill="#f7f4ee" font-family="Arial,sans-serif" font-size="12" font-weight="700">SQLite database</text>
+  <text x="527" y="420" fill="#c3c2c6" font-family="Arial,sans-serif" font-size="10">stored on your device</text>
+  <text x="527" y="438" fill="#c3c2c6" font-family="Arial,sans-serif" font-size="10">HTML report · CSV export</text>
+
+  <text x="44" y="504" fill="#55565c" font-family="Arial,sans-serif" font-size="11">The browser on this website performs no collection.</text>
+  <path d="M44 520h636" stroke="#c5bfb4" stroke-width="1"/>
+  <text x="44" y="540" fill="#77766f" font-family="Arial,sans-serif" font-size="9" letter-spacing="1.1">ILLUSTRATIVE FLOW · NO LIVE DATA</text>
+</svg>

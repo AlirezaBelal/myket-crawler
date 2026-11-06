@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-labelledby="title">
+  <title id="title">Myket Crawler mark</title>
+  <rect x="1" y="1" width="46" height="46" rx="12" fill="#202228"/>
+  <path d="M12 14h7.2L24 21l4.8-7H36v20h-7V24l-5 6.8L19 24v10h-7V14Z" fill="#f5f2ec"/>
+  <circle cx="36" cy="12" r="4" fill="#d72d63"/>
+</svg>
