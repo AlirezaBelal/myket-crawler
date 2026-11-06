@@ -8,7 +8,8 @@ const results=[];
 const sites=[['product',process.env.PRODUCT_URL||'http://127.0.0.1:8765/'],['portfolio','https://alirezabelal.github.io/work/lab/myket-crawler/']];
 try {
 for(const [name,url] of sites) for(const width of [320,375,390,768,1024,1440,1920]){
- const page=await browser.newPage({viewport:{width,height:900},reducedMotion:'reduce'});
+ const context=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce'});
+ const page=await context.newPage();
  const errors=[],requests=[],bad=[];
  page.on('pageerror',e=>errors.push(e.message));
  page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
@@ -33,6 +34,6 @@ for(const [name,url] of sites) for(const width of [320,375,390,768,1024,1440,192
  assert.deepEqual(errors,[]);assert.deepEqual(bad,[]);
  await page.screenshot({path:out+'/'+name+'-'+width+'.png',fullPage:true});
  results.push({name,width,url,errors,external,assets:'passed',overflow:'passed',keyboard:'passed',h1:await page.locator('h1').evaluate(e=>getComputedStyle(e).fontSize)});
- await page.close();
+ await context.close();
 }
 } finally {await writeFile(out+'/results.json',JSON.stringify(results,null,2));await browser.close();}
