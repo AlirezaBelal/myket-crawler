@@ -50,3 +50,17 @@ jobs:
       - name: Deploy static product website
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify published product site
+        env:
+          SITE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          set -eu
+          test "$SITE_URL" = "https://alirezabelal.github.io/myket-crawler/"
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+          curl --fail --silent --show-error --location --retry 6 --retry-all-errors --retry-delay 5 --max-time 30 "$SITE_URL" --output "$response_file"
+          grep -Fq '<title>Myket Crawler — Local Android app research</title>' "$response_file"
+          grep -Fq 'You run the crawler yourself.' "$response_file"
+          for asset in styles.css assets/myket-mark.svg assets/crawler-workflow.svg; do
+            curl --fail --silent --show-error --location --retry 6 --retry-all-errors --retry-delay 5 --max-time 30 "${SITE_URL}${asset}" --output /dev/null
+          done
