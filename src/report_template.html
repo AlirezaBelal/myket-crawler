@@ -94,6 +94,14 @@
 
       <section class="surface inventory" id="inventory" aria-labelledby="inventory-title">
         <div class="inventory-heading"><div><p class="overline">جست‌وجو و کشف</p><h2 id="inventory-title">فهرست اپلیکیشن‌ها</h2><p class="section-helper">نام، دسته‌بندی و اطلاعات هر برنامه را با جست‌وجو و مرتب‌سازی بررسی کنید.</p></div><span class="table-count">__REPORT_COUNT__ برنامه</span></div>
+        <div class="local-data-tools">
+          <label for="local-data-file">تحلیل فایل CSV یا JSON محلی
+            <input id="local-data-file" type="file" accept=".csv,.json,text/csv,application/json" aria-describedby="local-data-help local-data-status">
+          </label>
+          <button type="button" id="reset-local-data" class="reset-button" disabled>بازگشت به گزارش</button>
+          <span id="local-data-status" role="status" aria-live="polite">فایل CSV/JSON از خروجی همین پروژه را انتخاب کنید. پردازش فقط در این زبانه انجام می‌شود.</span>
+          <small id="local-data-help">بدون بارگذاری یا ذخیره‌سازی. برای SQLite، با فرمان CLI خروجی CSV بگیرید؛ ستون‌های تماس نادیده گرفته می‌شوند.</small>
+        </div>
         <div class="toolbar">
           <label class="search-box" for="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 5 5" stroke-linecap="round"/></svg><input id="search" type="search" autocomplete="off" placeholder="جست‌وجوی نام، شناسه یا دسته‌بندی..." aria-label="جست‌وجوی برنامه‌ها"><kbd aria-hidden="true">/</kbd></label>
           <label class="select-wrap"><span class="sr-only">فیلتر دسته‌بندی</span><select id="category-filter" aria-label="فیلتر دسته‌بندی"><option value="">همهٔ دسته‌ها</option>__REPORT_CATEGORY_OPTIONS__</select></label>
